@@ -1,0 +1,13 @@
+package com.example.PipReviewSystem;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+@SpringBootApplication
+public class PipReviewSystemApplication {
+
+	public static void main(String[] args) {
+		SpringApplication.run(PipReviewSystemApplication.class, args);
+	}
+
+}
