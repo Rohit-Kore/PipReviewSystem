@@ -38,7 +38,7 @@ public class Employee {
     @OneToMany(mappedBy = "employee", cascade = CascadeType.ALL)
     private List<SkillGapAnalysis> skillGapAnalyses;
 
-    @OneToMany(mappedBy = "employee", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "toUser", cascade = CascadeType.ALL)
     private List<Feedback> feedbacksReceived;
 
     @OneToMany(mappedBy = "fromUser", cascade = CascadeType.ALL)

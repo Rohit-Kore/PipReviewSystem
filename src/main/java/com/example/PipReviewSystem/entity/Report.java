@@ -1,9 +1,10 @@
 package com.example.PipReviewSystem.entity;
 
 import jakarta.persistence.*;
+import lombok.Data;
 
 import java.time.LocalDateTime;
-
+@Data
 @Entity
 public class Report {
 
@@ -18,5 +19,5 @@ public class Report {
     private String reportType; // PERFORMANCE, PIP, FEEDBACK
     private LocalDateTime generatedOn;
 
-    // private String fileUrl; // Uncomment if file URL support is added
+    private String fileUrl; // Uncomment if file URL support is added
 }
