@@ -19,6 +19,11 @@ public class Feedback {
     @JoinColumn(name = "to_user_id")
     private Employee toUser;
 
+    @ManyToOne
+    @JoinColumn(name = "employee_id")
+    private Employee employee;
+
+
     private String feedbackType; // PEER, SELF, MANAGER
     private String comments;
     private int rating;

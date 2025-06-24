@@ -29,4 +29,84 @@ public class PerformanceReview {
     private String comments;
     private String reviewType; // Monthly or Quarterly
     private String pdfUrl;
+
+    public Long getReviewId() {
+        return reviewId;
+    }
+
+    public void setReviewId(Long reviewId) {
+        this.reviewId = reviewId;
+    }
+
+    public Employee getEmployee() {
+        return employee;
+    }
+
+    public void setEmployee(Employee employee) {
+        this.employee = employee;
+    }
+
+    public Employee getReviewer() {
+        return reviewer;
+    }
+
+    public void setReviewer(Employee reviewer) {
+        this.reviewer = reviewer;
+    }
+
+    public String getReviewPeriod() {
+        return reviewPeriod;
+    }
+
+    public void setReviewPeriod(String reviewPeriod) {
+        this.reviewPeriod = reviewPeriod;
+    }
+
+    public LocalDateTime getReviewDate() {
+        return reviewDate;
+    }
+
+    public void setReviewDate(LocalDateTime reviewDate) {
+        this.reviewDate = reviewDate;
+    }
+
+    public String getScores() {
+        return scores;
+    }
+
+    public void setScores(String scores) {
+        this.scores = scores;
+    }
+
+    public Double getOverallRating() {
+        return overallRating;
+    }
+
+    public void setOverallRating(Double overallRating) {
+        this.overallRating = overallRating;
+    }
+
+    public String getComments() {
+        return comments;
+    }
+
+    public void setComments(String comments) {
+        this.comments = comments;
+    }
+
+    public String getReviewType() {
+        return reviewType;
+    }
+
+    public void setReviewType(String reviewType) {
+        this.reviewType = reviewType;
+    }
+
+    public String getPdfUrl() {
+        return pdfUrl;
+    }
+
+    public void setPdfUrl(String pdfUrl) {
+        this.pdfUrl = pdfUrl;
+    }
 }
