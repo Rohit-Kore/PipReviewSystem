@@ -1,37 +1,20 @@
-package com.example.PipReviewSystem.entity;
-
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonManagedReference;
-import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+package com.example.PipReviewSystem.dto;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
-@Entity
-@NoArgsConstructor
-@AllArgsConstructor
-public class Feedback {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+public class FeedbackResponseDto {
     private Long feedbackId;
-
-    @ManyToOne
-    @JoinColumn(name = "from_user_id")
-    private Employee fromUser;
-
-    @ManyToOne
-    @JoinColumn(name = "to_user_id")
-    private Employee toUser;
-
-
-    private String feedbackType; // PEER, SELF, MANAGER
+    private UUID fromUser;
+    private UUID toUser;
+    private String feedbackType;
     private String comments;
     private int rating;
-    private Boolean isAnonymous;
+    private Boolean anonymous;
     private LocalDateTime createdDate;
+
+    // Getters and setters
+
 
     public Long getFeedbackId() {
         return feedbackId;
@@ -41,19 +24,19 @@ public class Feedback {
         this.feedbackId = feedbackId;
     }
 
-    public Employee getFromUser() {
+    public UUID getFromUser() {
         return fromUser;
     }
 
-    public void setFromUser(Employee fromUser) {
+    public void setFromUser(UUID fromUser) {
         this.fromUser = fromUser;
     }
 
-    public Employee getToUser() {
+    public UUID getToUser() {
         return toUser;
     }
 
-    public void setToUser(Employee toUser) {
+    public void setToUser(UUID toUser) {
         this.toUser = toUser;
     }
 
@@ -82,11 +65,11 @@ public class Feedback {
     }
 
     public Boolean getAnonymous() {
-        return isAnonymous;
+        return anonymous;
     }
 
     public void setAnonymous(Boolean anonymous) {
-        isAnonymous = anonymous;
+        this.anonymous = anonymous;
     }
 
     public LocalDateTime getCreatedDate() {
