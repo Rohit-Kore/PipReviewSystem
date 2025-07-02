@@ -2,6 +2,7 @@ package com.example.PipReviewSystem.service;
 
 import com.example.PipReviewSystem.config.JwtUtil;
 import com.example.PipReviewSystem.entity.Employee;
+import com.example.PipReviewSystem.enums.Role;
 import com.example.PipReviewSystem.repository.EmployeeRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -106,6 +107,8 @@ public class EmployeeServiceImpl implements EmployeeService {
             employee.setSkills(updatedEmployee.getSkills());
             employee.setKpi(updatedEmployee.getKpi());
             employee.setStatus(updatedEmployee.getStatus());
+            employee.setManagerId(updatedEmployee.getManagerId());
+
             Employee updated = employeeRepository.save(employee);
             return new ResponseEntity<>(updated, HttpStatus.OK);
         } else {
@@ -123,6 +126,196 @@ public class EmployeeServiceImpl implements EmployeeService {
             return new ResponseEntity<>("Employee not found", HttpStatus.NOT_FOUND);
         }
     }
+
+
+
+
+
+//    @Override
+//    public ResponseEntity<?> registerEmployee(Employee employee) {
+//        if (employeeRepository.findByEmail(employee.getEmail()).isPresent()) {
+//            return new ResponseEntity<>("Email already exists", HttpStatus.BAD_REQUEST);
+//        }
+//        employee.setPassword(passwordEncoder.encode(employee.getPassword()));
+//        employee.setStatus("ACTIVE");
+//        return new ResponseEntity<>(employeeRepository.save(employee), HttpStatus.CREATED);
+//    }
+
+//    @Override
+//    public ResponseEntity<?> login(String email, String password) {
+//        Optional<Employee> optional = employeeRepository.findByEmail(email);
+//        if (optional.isEmpty()) return new ResponseEntity<>("Invalid email", HttpStatus.UNAUTHORIZED);
+//
+//        Employee emp = optional.get();
+//        if (!passwordEncoder.matches(password, emp.getPassword())) {
+//            return new ResponseEntity<>("Invalid password", HttpStatus.UNAUTHORIZED);
+//        }
+//
+//        String token = jwtUtil.generateToken(
+//                org.springframework.security.core.userdetails.User.withUsername(emp.getEmail())
+//                        .password(emp.getPassword()).authorities(emp.getRole().name()).build()
+//        );
+//
+//        Map<String, Object> response = new HashMap<>();
+//        response.put("message", "Login successful");
+//        response.put("token", token);
+//        response.put("employee", emp);
+//        return new ResponseEntity<>(response, HttpStatus.OK);
+//    }
+
+    @Override
+    public ResponseEntity<?> logout(String email) {
+        return new ResponseEntity<>("Logged out successfully (client should discard token)", HttpStatus.OK);
+    }
+
+    @Override
+    public ResponseEntity<?> forgotPassword(String email, String newPassword) {
+        Optional<Employee> optional = employeeRepository.findByEmail(email);
+        if (optional.isEmpty()) return new ResponseEntity<>("Email not found", HttpStatus.NOT_FOUND);
+
+        Employee emp = optional.get();
+        emp.setPassword(passwordEncoder.encode(newPassword));
+        employeeRepository.save(emp);
+        return new ResponseEntity<>("Password updated successfully", HttpStatus.OK);
+    }
+
+//    @Override
+//    public ResponseEntity<?> getAllEmployees() {
+//        return new ResponseEntity<>(employeeRepository.findAll(), HttpStatus.OK);
+//    }
+
+//    @Override
+//    public ResponseEntity<?> getEmployeeById(UUID id) {
+//        return employeeRepository.findById(id)
+//                .map(emp -> new ResponseEntity<>(emp, HttpStatus.OK))
+//                .orElse(new ResponseEntity<>("Employee not found", HttpStatus.NOT_FOUND));
+//    }
+
+//    @Override
+//    public ResponseEntity<?> updateEmployee(UUID id, Employee updated) {
+//        Optional<Employee> opt = employeeRepository.findById(id);
+//        if (opt.isEmpty()) return new ResponseEntity<>("Employee not found", HttpStatus.NOT_FOUND);
+//
+//        Employee emp = opt.get();
+//        emp.setName(updated.getName());
+//        emp.setDepartment(updated.getDepartment());
+//        emp.setDesignation(updated.getDesignation());
+//        emp.setSkills(updated.getSkills());
+//        emp.setKpi(updated.getKpi());
+//        emp.setStatus(updated.getStatus());
+//        return new ResponseEntity<>(employeeRepository.save(emp), HttpStatus.OK);
+//    }
+
+//    @Override
+//    public ResponseEntity<?> deleteEmployee(UUID id) {
+//        Optional<Employee> opt = employeeRepository.findById(id);
+//        if (opt.isEmpty()) return new ResponseEntity<>("Employee not found", HttpStatus.NOT_FOUND);
+//
+//        employeeRepository.delete(opt.get());
+//        return new ResponseEntity<>("Employee deleted", HttpStatus.OK);
+//    }
+
+    @Override
+    public ResponseEntity<?> getEmployeesByStatus(String status) {
+        return new ResponseEntity<>(employeeRepository.findByStatus(status), HttpStatus.OK);
+    }
+
+    @Override
+    public ResponseEntity<?> getEmployeesByRole(String role) {
+        try {
+            Role r = Role.valueOf(role);
+            return new ResponseEntity<>(employeeRepository.findByRole(r), HttpStatus.OK);
+        } catch (IllegalArgumentException e) {
+            return new ResponseEntity<>("Invalid role", HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @Override
+    public ResponseEntity<?> assignManager(UUID empId, UUID managerId) {
+        Optional<Employee> empOpt = employeeRepository.findById(empId);
+        Optional<Employee> mgrOpt = employeeRepository.findById(managerId);
+
+        if (empOpt.isEmpty() || mgrOpt.isEmpty()) return new ResponseEntity<>("Invalid IDs", HttpStatus.BAD_REQUEST);
+
+        Employee emp = empOpt.get();
+        emp.setManagerId(managerId);
+        return new ResponseEntity<>(employeeRepository.save(emp), HttpStatus.OK);
+    }
+
+    @Override
+    public ResponseEntity<?> getTeamMembers(UUID managerId) {
+        return new ResponseEntity<>(employeeRepository.findByManagerId(managerId), HttpStatus.OK);
+    }
+
+    @Override
+    public ResponseEntity<?> updateStatus(UUID id, String status) {
+        Optional<Employee> empOpt = employeeRepository.findById(id);
+        if (empOpt.isEmpty()) return new ResponseEntity<>("Employee not found", HttpStatus.NOT_FOUND);
+
+        Employee emp = empOpt.get();
+        emp.setStatus(status);
+        return new ResponseEntity<>(employeeRepository.save(emp), HttpStatus.OK);
+    }
+
+
+    @Override
+    public ResponseEntity<?> addEmployeeToPip(UUID employeeId) {
+        Optional<Employee> empOpt = employeeRepository.findById(employeeId);
+        if (empOpt.isEmpty()) return new ResponseEntity<>("Employee not found", HttpStatus.NOT_FOUND);
+
+        Employee emp = empOpt.get();
+        if ("UNDER_PIP".equalsIgnoreCase(emp.getStatus())) {
+            return new ResponseEntity<>("Employee is already under PIP", HttpStatus.BAD_REQUEST);
+        }
+
+        emp.setStatus("UNDER_PIP");
+        employeeRepository.save(emp);
+        return new ResponseEntity<>("Employee added to PIP successfully", HttpStatus.OK);
+    }
+
+    @Override
+    public ResponseEntity<?> resetPassword(UUID employeeId, String oldPassword, String newPassword) {
+        Optional<Employee> optional = employeeRepository.findById(employeeId);
+        if (optional.isEmpty()) {
+            return new ResponseEntity<>("Employee not found", HttpStatus.NOT_FOUND);
+        }
+
+        Employee employee = optional.get();
+
+        // Verify old password matches
+        if (!passwordEncoder.matches(oldPassword, employee.getPassword())) {
+            return new ResponseEntity<>("Old password is incorrect", HttpStatus.UNAUTHORIZED);
+        }
+
+        // Encode and update new password
+        employee.setPassword(passwordEncoder.encode(newPassword));
+        employeeRepository.save(employee);
+
+        return new ResponseEntity<>("Password reset successfully", HttpStatus.OK);
+    }
+
+
+    @Override
+    public ResponseEntity<?> getPipStatus(UUID employeeId) {
+        Optional<Employee> empOpt = employeeRepository.findById(employeeId);
+        if (empOpt.isEmpty()) return new ResponseEntity<>("Employee not found", HttpStatus.NOT_FOUND);
+
+        Map<String, String> res = new HashMap<>();
+        res.put("pipStatus", empOpt.get().getStatus());
+        return new ResponseEntity<>(res, HttpStatus.OK);
+    }
+
+
+
+
+
+
+
+
+
+
+
+
 }
 
 

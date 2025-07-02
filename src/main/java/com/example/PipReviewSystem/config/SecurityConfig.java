@@ -32,13 +32,24 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // Swagger and public routes
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
-                        .requestMatchers("/api/employees/signup", "/api/employees/login").permitAll()
+                        .requestMatchers( "/api/employees/login").permitAll()
+                        .requestMatchers("api/employees/forgot-password", "/api/employees/logout").permitAll()
 
                         // Employee
+                                .requestMatchers( "/api/employees/reset-password").permitAll()
                         .requestMatchers("/api/employees/all").hasAuthority("ADMIN")
+                        .requestMatchers("/api/employees/signup").hasAnyAuthority("ADMIN","HR")
                         .requestMatchers("/api/employees/{id}").hasAnyAuthority("ADMIN", "HR")
                         .requestMatchers("/api/employees/update/{id}").hasAnyAuthority("ADMIN", "HR")
                         .requestMatchers("/api/employees/delete/{id}").hasAnyAuthority("ADMIN", "HR")
+                        .requestMatchers("/api/employees/assign-manager").hasAnyAuthority("ADMIN", "HR", "MANAGER")
+                        .requestMatchers("/api/employees/role/{role}").hasAnyAuthority("ADMIN", "HR")
+                        .requestMatchers("/api/employees/add-to-pip/{employeeId}").hasAnyAuthority("MANAGER","ADMIN")
+//                        .requestMatchers("/api/employees/delete/{id}").hasAnyAuthority("ADMIN", "HR")
+//                        .requestMatchers("/api/employees/delete/{id}").hasAnyAuthority("ADMIN", "HR")
+
+
+
 
                         // Audit
                         .requestMatchers("/api/audit/add").hasAnyAuthority("ADMIN", "HR")

@@ -9,12 +9,40 @@ import java.util.UUID;
 
 public interface EmployeeService {
         ResponseEntity<?> registerEmployee(Employee employee);
+
         ResponseEntity<?> login(String email, String password);
+
         ResponseEntity<?> getAllEmployees();
+
         ResponseEntity<?> getEmployeeById(UUID id);
+
         ResponseEntity<?> updateEmployee(UUID id, Employee employee);
+
         ResponseEntity<?> deleteEmployee(UUID id);
-    }
+        ResponseEntity<?> resetPassword(UUID employeeId, String oldPassword, String newPassword);
+
+
+        //extra
+        ResponseEntity<?> getEmployeesByStatus(String status);
+
+        ResponseEntity<?> getEmployeesByRole(String role);
+
+        ResponseEntity<?> assignManager(UUID employeeId, UUID managerId);
+
+        ResponseEntity<?> getTeamMembers(UUID managerId);
+
+        ResponseEntity<?> updateStatus(UUID id, String status);
+
+        ResponseEntity<?> logout(String email);
+
+        ResponseEntity<?> forgotPassword(String email, String newPassword);
+
+        ResponseEntity<?> addEmployeeToPip(UUID employeeId);
+
+        ResponseEntity<?> getPipStatus(UUID employeeId);
+
+
+}
 
 //    Employee createEmployee(Employee employee);
 //
