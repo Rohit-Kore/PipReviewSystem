@@ -1,49 +1,79 @@
 package com.example.PipReviewSystem.entity;
 
+import com.example.PipReviewSystem.enums.Role;
+import com.fasterxml.jackson.annotation.*;
 import jakarta.persistence.*;
+import lombok.*;
 
 import java.time.LocalDateTime;
-import java.util.List;
+import java.util.*;
 
+
+@Setter
+@Getter
+@NoArgsConstructor
+@AllArgsConstructor
 @Entity
 public class Employee {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long employeeId;
+    @GeneratedValue
+    @Column(columnDefinition = "BINARY(16)")
+    private UUID employeeId;
 
     private String name;
+
+    @Column(unique = true, nullable = false)
     private String email;
+
     private String password;
-    private String role; // EMPLOYEE, MANAGER, ADMIN, HR
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Role role; //  using ENUM
+
     private String department;
     private String designation;
     private String skills;
     private String currentKRA;
     private String kpi;
-    private Long managerId; // Self-reference for reporting
+
+    private UUID managerId; // UUID instead of Long for consistency
+
     private String photoUrl;
     private LocalDateTime joiningDate;
+
     private String status; // ACTIVE, INACTIVE, UNDER_PIP
 
+    // Relationships
     @OneToMany(mappedBy = "employee", cascade = CascadeType.ALL)
+    @JsonIgnore
     private List<PIP> pips;
 
     @OneToMany(mappedBy = "employee", cascade = CascadeType.ALL)
+    @JsonIgnore
     private List<PerformanceReview> performanceReviews;
 
     @OneToMany(mappedBy = "employee", cascade = CascadeType.ALL)
+    @JsonIgnore
     private List<Notification> notifications;
 
     @OneToMany(mappedBy = "employee", cascade = CascadeType.ALL)
+    @JsonIgnore
     private List<SkillGapAnalysis> skillGapAnalyses;
 
-    @OneToMany(mappedBy = "employee", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "toUser", cascade = CascadeType.ALL)
+    @JsonIgnore
     private List<Feedback> feedbacksReceived;
 
     @OneToMany(mappedBy = "fromUser", cascade = CascadeType.ALL)
+    @JsonIgnore
     private List<Feedback> feedbacksGiven;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    @JsonIgnore
+    @JsonManagedReference
     private List<AuditLog> auditLogs;
+
+
 }
