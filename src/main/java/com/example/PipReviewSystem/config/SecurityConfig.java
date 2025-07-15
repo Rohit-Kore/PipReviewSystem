@@ -68,7 +68,6 @@ public class SecurityConfig {
                         // Feedback
                                 .requestMatchers("/api/feedbacks/add").hasAnyAuthority("EMPLOYEE", "MANAGER")
                                 .requestMatchers("/api/feedbacks").hasAnyAuthority("ADMIN", "HR", "MANAGER")
-
                                 .requestMatchers(HttpMethod.GET, "/api/feedbacks/{id}").hasAnyAuthority("ADMIN", "HR", "MANAGER")
                                 .requestMatchers(HttpMethod.PUT, "/api/feedbacks/{id}").hasAnyAuthority("MANAGER", "HR")
                                 .requestMatchers(HttpMethod.DELETE, "/api/feedbacks/{id}").hasAuthority("HR")
@@ -76,15 +75,21 @@ public class SecurityConfig {
                                 .requestMatchers("/api/feedbacks/fromUser/**").hasAnyAuthority("EMPLOYEE", "MANAGER", "HR")
                                 .requestMatchers("/api/feedbacks/type/**").hasAnyAuthority("HR", "MANAGER")
 
-                                // Reports
-                        .requestMatchers("/api/reports").hasAnyAuthority("ADMIN", "HR")
-                        .requestMatchers("/api/reports/{id}").hasAnyAuthority("ADMIN", "HR")
-                        .requestMatchers("/api/reports/employee/**").hasAnyAuthority("MANAGER", "HR", "EMPLOYEE")
-                        .requestMatchers("/api/reports/type/**").hasAnyAuthority("ADMIN", "HR")
-                        .requestMatchers("/api/reports").hasAnyAuthority("MANAGER", "HR")
-                        .requestMatchers("/api/reports/{id}").hasAnyAuthority("ADMIN", "HR")
 
-                        // Skill Gap
+
+                                // Reports
+                               // .requestMatchers("/api/reports").hasAnyAuthority("ADMIN", "HR","MANAGER")
+                                .requestMatchers("/api/reports/{id}").hasAnyAuthority("ADMIN", "HR")
+                                .requestMatchers("/api/reports/employee/**").hasAnyAuthority("MANAGER", "HR", "EMPLOYEE","ADMIN")
+                                .requestMatchers("/api/reports/type/**").hasAnyAuthority("ADMIN", "HR")
+                              //  .requestMatchers("/api/reports").permitAll()
+                                .requestMatchers("/api/reports/**").hasAuthority("MANAGER")
+                                .requestMatchers("/api/reports/{id}").hasAnyAuthority("ADMIN", "HR")
+
+
+
+
+                                // Skill Gap
                         .requestMatchers("/api/skill-gap").hasAnyAuthority("HR", "MANAGER", "ADMIN")
                         .requestMatchers("/api/skill-gap/{id}").hasAnyAuthority("HR", "MANAGER", "ADMIN")
                         .requestMatchers("/api/skill-gap/employee/**").hasAnyAuthority("HR", "MANAGER", "EMPLOYEE")
