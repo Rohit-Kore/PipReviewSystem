@@ -9,6 +9,14 @@ import java.util.UUID;
 
 @Repository
 public interface ReportRepository extends JpaRepository<Report, Long> {
-    List<Report> findByCreatedByEmployeeId(UUID userId);
-    List<Report> findByReportType(String reportType);
+    List<Report> findByCreatedByEmployeeId(UUID managerId);
+    List<Report> findByTargetEmployeeEmployeeId(UUID employeeId);
 }
+
+
+
+//old omkar
+//public interface ReportRepository extends JpaRepository<Report, Long> {
+//    List<Report> findByCreatedByEmployeeId(UUID userId);
+//    List<Report> findByReportType(String reportType);
+//}
