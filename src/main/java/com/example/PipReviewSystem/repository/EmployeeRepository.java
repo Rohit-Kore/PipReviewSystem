@@ -23,6 +23,7 @@ import java.util.UUID;
        List<Employee> findByJoiningDateBetween(LocalDateTime start, LocalDateTime end);
 
 
+    Optional<Employee> findByPasswordResetToken(String token);
 
 }
 

@@ -41,6 +41,12 @@ public interface EmployeeService {
 
         ResponseEntity<?> getPipStatus(UUID employeeId);
 
+        ResponseEntity<?> requestPasswordResetOtp(String email);
+        ResponseEntity<?> verifyOtpAndResetPassword(String email, String otp, String newPassword);
+
+
+        ResponseEntity<?> requestPasswordResetLink(String email, String baseUrl); // Added this
+        ResponseEntity<?> resetPasswordWithToken(String token, String newPassword); // Added this
 
 }
 

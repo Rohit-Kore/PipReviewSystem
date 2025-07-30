@@ -45,6 +45,15 @@ public class Employee {
 
     private String status; // ACTIVE, INACTIVE, UNDER_PIP
 
+    private String otp;
+    private LocalDateTime otpGeneratedTime;
+
+    private boolean isTemporaryPassword;
+    private LocalDateTime temporaryPasswordGeneratedTime;
+
+    private String passwordResetToken;
+    private LocalDateTime passwordResetTokenExpiryTime;
+
     // Relationships
     @OneToMany(mappedBy = "employee", cascade = CascadeType.ALL)
     @JsonIgnore
