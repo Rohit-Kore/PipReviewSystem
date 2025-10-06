@@ -6,8 +6,8 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Setter
-@Getter
+//@Setter
+//@Getter
 @AllArgsConstructor
 @NoArgsConstructor
 public class Report {
@@ -28,6 +28,53 @@ public class Report {
     private String fileUrl;
     private LocalDateTime generatedOn;
 
+    public Long getReportId() {
+        return reportId;
+    }
+
+    public void setReportId(Long reportId) {
+        this.reportId = reportId;
+    }
+
+    public Employee getCreatedBy() {
+        return createdBy;
+    }
+
+    public void setCreatedBy(Employee createdBy) {
+        this.createdBy = createdBy;
+    }
+
+    public Employee getTargetEmployee() {
+        return targetEmployee;
+    }
+
+    public void setTargetEmployee(Employee targetEmployee) {
+        this.targetEmployee = targetEmployee;
+    }
+
+    public String getReportType() {
+        return reportType;
+    }
+
+    public void setReportType(String reportType) {
+        this.reportType = reportType;
+    }
+
+    public String getFileUrl() {
+        return fileUrl;
+    }
+
+    public void setFileUrl(String fileUrl) {
+        this.fileUrl = fileUrl;
+    }
+
+    public LocalDateTime getGeneratedOn() {
+        return generatedOn;
+    }
+
+    public void setGeneratedOn(LocalDateTime generatedOn) {
+        this.generatedOn = generatedOn;
+    }
 }
 
 

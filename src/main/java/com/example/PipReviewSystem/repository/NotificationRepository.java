@@ -12,4 +12,5 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
     List<Notification> findByEmployeeEmployeeId(UUID userId);
     List<Notification> findByIsReadFalseAndEmployeeEmployeeId(UUID userId);
 
+    List<Notification> findByEmployeeEmail(String email);
 }

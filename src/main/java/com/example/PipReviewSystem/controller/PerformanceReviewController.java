@@ -2,6 +2,7 @@
 package com.example.PipReviewSystem.controller;
 
 import com.example.PipReviewSystem.dto.PerformanceReviewDTO;
+import com.example.PipReviewSystem.dto.PerformanceReviewResponseDTO;
 import com.example.PipReviewSystem.entity.PerformanceReview;
 import com.example.PipReviewSystem.service.PerformanceReviewService;
 import lombok.RequiredArgsConstructor;
@@ -13,6 +14,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
+@CrossOrigin("*")
 @RequestMapping("/api/performance-reviews")
 @RequiredArgsConstructor
 public class PerformanceReviewController {
@@ -20,17 +22,27 @@ public class PerformanceReviewController {
     private final PerformanceReviewService reviewService;
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('HR', 'MANAGER', 'ADMIN')")
+    @PreAuthorize("hasAnyAuthority('HR', 'MANAGER', 'ADMIN')")
     public ResponseEntity<?> createReview(@RequestBody PerformanceReviewDTO dto) {
         try {
-            PerformanceReview created = reviewService.createReview(dto);
-            return ResponseEntity.ok(created);
+            PerformanceReviewDTO created = reviewService.createReview(dto);
+            return ResponseEntity.ok(List.of(created)); // Wrap in list if needed
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body("Error creating review: " + e.getMessage());
         }
     }
 
+
+
     @GetMapping
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<List<PerformanceReviewResponseDTO>> getAllReviews() {
+        List<PerformanceReviewResponseDTO> reviews = reviewService.getAllPerformanceReviews();
+        return ResponseEntity.ok(reviews);
+    }
+
+
+/*   @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> getAllReviews() {
         try {
@@ -38,9 +50,9 @@ public class PerformanceReviewController {
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body("Failed to fetch reviews");
         }
-    }
+    }*/
 
-    @GetMapping("/{id}")
+   /* @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('EMPLOYEE', 'MANAGER', 'HR', 'ADMIN')")
     public ResponseEntity<?> getReviewById(@PathVariable Long id) {
         try {
@@ -48,7 +60,17 @@ public class PerformanceReviewController {
         } catch (RuntimeException e) {
             return ResponseEntity.status(404).body("Review not found: " + e.getMessage());
         }
-    }
+    }*/
+   @GetMapping("/{id}")
+   @PreAuthorize("hasAnyRole('EMPLOYEE', 'MANAGER', 'HR', 'ADMIN')")
+   public ResponseEntity<PerformanceReviewDTO> getReviewById(@PathVariable Long id) {
+       PerformanceReview review = reviewService.getReviewById(id);
+       PerformanceReviewDTO dto = reviewService.mapToDTO(review);
+       return ResponseEntity.ok(dto);
+   }
+
+
+
 
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('HR', 'MANAGER', 'ADMIN')")

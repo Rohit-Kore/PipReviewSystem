@@ -10,7 +10,10 @@ import java.util.UUID;
 public class FeedbackResponseDto {
     private Long feedbackId;
     private UUID fromUser;
+    private String fromUserName;
+
     private UUID toUser;
+    private String toUserName;
     private String feedbackType;
     private String comments;
     private int rating;

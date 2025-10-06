@@ -1,6 +1,7 @@
 package com.example.PipReviewSystem.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -20,11 +21,14 @@ public class PerformanceReview {
 
     @ManyToOne
     @JoinColumn(name = "employee_id", referencedColumnName = "employeeId")
-    @JsonIgnore
+   // @JsonIgnore
+    // Ignore Hibernate proxy properties during JSON serialization
+   @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Employee employee;
 
     @ManyToOne
     @JoinColumn(name = "reviewer_id", referencedColumnName = "employeeId")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Employee reviewer;
 
     private String reviewPeriod; // e.g., Q1-2025

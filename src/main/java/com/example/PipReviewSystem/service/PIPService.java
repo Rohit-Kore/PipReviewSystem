@@ -1,5 +1,6 @@
 package com.example.PipReviewSystem.service;
 
+import com.example.PipReviewSystem.dto.ProgressUpdateDTO;
 import com.example.PipReviewSystem.entity.PIP;
 import org.springframework.http.ResponseEntity;
 
@@ -11,4 +12,6 @@ public interface PIPService {
     ResponseEntity<?> completePip(Long pipId, String outcome);
     ResponseEntity<?> getPipsByEmployee(UUID employeeId);
     ResponseEntity<?> getAllPips();
+
+    ResponseEntity<?> trackProgress(Long pipId, ProgressUpdateDTO dto);
 }
