@@ -1,6 +1,5 @@
 package com.example.PipReviewSystem.controller;
 
-import com.example.PipReviewSystem.dto.VerifyOtpResetRequest;
 import com.example.PipReviewSystem.entity.Employee;
 import com.example.PipReviewSystem.service.EmployeeService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -9,8 +8,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -56,23 +53,12 @@ public class EmployeeController {
     }
 
     // New endpoint to verify OTP and reset password
-    // New endpoint to verify OTP and reset password
     @PutMapping("/reset-password/verify-otp-reset")
-    public ResponseEntity<?> verifyOtpAndResetPassword(@RequestBody VerifyOtpResetRequest request) {
-        return employeeService.verifyOtpAndResetPassword(
-                request.getEmail(), request.getOtp(), request.getNewPassword()
-        );
+    public ResponseEntity<?> verifyOtpAndResetPassword(@RequestParam String email,
+                                                       @RequestParam String otp,
+                                                       @RequestParam String newPassword) {
+        return employeeService.verifyOtpAndResetPassword(email, otp, newPassword);
     }
-
-
-
-
-//    @PutMapping("/reset-password/verify-otp-reset")
-//    public ResponseEntity<?> verifyOtpAndResetPassword(@RequestParam String email,
-//                                                       @RequestParam String otp,
-//                                                       @RequestParam String newPassword) {
-//        return employeeService.verifyOtpAndResetPassword(email, otp, newPassword);
-//    }
 
     // --- NEW: Endpoint to request password reset link ---
     // This endpoint is public (no @PreAuthorize) as it's for forgotten passwords.
@@ -101,8 +87,8 @@ public class EmployeeController {
 
 
     @PostMapping("/login")
-    public ResponseEntity<Employee> login(@RequestParam String email, @RequestParam String password) {
-        return (ResponseEntity<Employee>) employeeService.login(email, password);
+    public ResponseEntity<?> login(@RequestParam String email, @RequestParam String password) {
+        return employeeService.login(email, password);
     }
 
     @PreAuthorize("hasAuthority('ADMIN')")
@@ -179,43 +165,6 @@ public ResponseEntity<?> addToPip(@PathVariable UUID employeeId) {
 public ResponseEntity<?> pipStatus(@PathVariable UUID employeeId) {
     return employeeService.getPipStatus(employeeId);
 }
-
-
-/*
-// --- NEW: Endpoint for a logged-in manager to get their team ---
-    @Operation(
-            summary = "Get My Team",
-            description = "Allows a logged-in MANAGER to retrieve their assigned team members. Uses the manager's ID from the security context."
-    )
-    @PreAuthorize("hasAuthority('MANAGER')")
-    @GetMapping("/my-team")
-    public ResponseEntity<?> getMyTeam(Authentication authentication) {
-        UUID managerId = UUID.fromString(authentication.getName()); // Assuming the principal name is the UUID
-        return employeeService.getTeamMembers(managerId);
-    }
-*/
-
-    // --- NEW: Endpoint for a logged-in manager to get their team by email ---
-    @Operation(
-            summary = "Get My Team by Email",
-            description = "Allows a logged-in MANAGER to retrieve their assigned team members using their email from the security context."
-    )
-    @PreAuthorize("hasAuthority('MANAGER')")
-    @GetMapping("/assigned")
-    public ResponseEntity<List<Employee>> getMyTeamByEmail(Authentication authentication) {
-        String managerEmail = authentication.getName(); // Assuming the principal name is the email
-        List<Employee> assignedEmployees = employeeService.getAssignedEmployees(managerEmail);
-        // Set the manager field to null for each employee to prevent nested data
-        for (Employee employee : assignedEmployees) {
-            employee.setManager(null);
-        }
-
-        return ResponseEntity.ok(assignedEmployees);
-    }
-
-
-
-
 }
 
 

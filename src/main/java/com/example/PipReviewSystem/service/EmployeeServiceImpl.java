@@ -1,11 +1,9 @@
 package com.example.PipReviewSystem.service;
 
 import com.example.PipReviewSystem.config.JwtUtil;
-import com.example.PipReviewSystem.dto.LoginResponseDTO; // Added: For structured login response
 import com.example.PipReviewSystem.entity.Employee;
 import com.example.PipReviewSystem.enums.Role;
 import com.example.PipReviewSystem.repository.EmployeeRepository;
-import com.example.PipReviewSystem.repository.PipRepository; // Make sure this is imported if used
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,7 +14,6 @@ import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
-import java.util.stream.Collectors; // Added: For stream operations like in getEmployeesByRole
 
 @Service
 public class EmployeeServiceImpl implements EmployeeService {
@@ -32,9 +29,6 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     @Autowired
     private MailService mailService;
-
-    @Autowired // Added: For sending real-time notifications
-    private NotificationService notificationService;
 
     // --- Constants ---
     private static final long OTP_VALID_DURATION_MINUTES = 10; // minutes
@@ -71,6 +65,7 @@ public class EmployeeServiceImpl implements EmployeeService {
         password.append(NUMBER.charAt(random.nextInt(NUMBER.length())));
         password.append(OTHER_CHAR.charAt(random.nextInt(OTHER_CHAR.length())));
 
+        // Fill the rest of the password length
         for (int i = 0; i < 8; i++) { // 12 - 4 (guaranteed chars) = 8 remaining
             password.append(PASSWORD_CHARS.charAt(random.nextInt(PASSWORD_CHARS.length())));
         }
@@ -118,20 +113,6 @@ public class EmployeeServiceImpl implements EmployeeService {
 
         Employee saved = employeeRepository.save(employee);
 
-        // Notification for the newly registered employee
-        String notificationTitle = "Welcome to the system!";
-        String notificationMessage = "Your account has been created. Please log in and change your password.";
-        notificationService.createNotification(saved, notificationTitle, notificationMessage, "INFO"); // Added notification
-
-        // Notification for Admins about new registration (ADDED)
-        List<Employee> admins = employeeRepository.findByRole(Role.ADMIN);
-        for (Employee admin : admins) {
-            String adminNotificationTitle = "New Employee Registered";
-            String adminNotificationMessage = saved.getName() + " (" + saved.getEmail() + ") has been successfully registered.";
-            notificationService.createNotification(admin, adminNotificationTitle, adminNotificationMessage, "INFO");
-        }
-
-
         // Calculate expiry time for the email message
         LocalDateTime expiryTime = saved.getTemporaryPasswordGeneratedTime().plusHours(TEMPORARY_PASSWORD_VALID_DURATION_HOURS);
 
@@ -150,20 +131,6 @@ public class EmployeeServiceImpl implements EmployeeService {
     }
 
     /**
-     * Deprecated method for direct password reset without OTP/token.
-     * Clients should use OTP-based or link-based password reset.
-     *
-     * @param email The employee's email.
-     * @param newPassword The new password.
-     * @return ResponseEntity indicating method not allowed.
-     */
-    @Override
-    public ResponseEntity<?> forgotPassword(String email, String newPassword) {
-        // This method is now deprecated in favor of the OTP-based reset
-        return new ResponseEntity<>("This method is deprecated. Please use the OTP-based password reset endpoints.", HttpStatus.METHOD_NOT_ALLOWED);
-    }
-
-    /**
      * Authenticates an employee and issues a JWT token.
      * Checks for temporary password expiry and indicates if a password change is required.
      *
@@ -172,16 +139,16 @@ public class EmployeeServiceImpl implements EmployeeService {
      * @return ResponseEntity with login success message, JWT token, employee details, and password change requirement.
      */
     @Override
-    public ResponseEntity<LoginResponseDTO> login(String email, String password) { // Changed return type to LoginResponseDTO
+    public ResponseEntity<?> login(String email, String password) {
         Optional<Employee> optional = employeeRepository.findByEmail(email);
         if (optional.isEmpty()) {
-            return new ResponseEntity<>(null, HttpStatus.UNAUTHORIZED); // Modified for LoginResponseDTO
+            return new ResponseEntity<>("Invalid email or password", HttpStatus.UNAUTHORIZED);
         }
 
         Employee employee = optional.get();
 
         if (!passwordEncoder.matches(password, employee.getPassword())) {
-            return new ResponseEntity<>(null, HttpStatus.UNAUTHORIZED); // Modified for LoginResponseDTO
+            return new ResponseEntity<>("Invalid email or password", HttpStatus.UNAUTHORIZED);
         }
 
         // Temporary password expiry check
@@ -193,7 +160,7 @@ public class EmployeeServiceImpl implements EmployeeService {
                 employee.setTemporaryPassword(false); // Clear temporary flag
                 employee.setTemporaryPasswordGeneratedTime(null);
                 employeeRepository.save(employee);
-                return new ResponseEntity<>(null, HttpStatus.UNAUTHORIZED); // Modified for LoginResponseDTO
+                return new ResponseEntity<>("Your temporary password has expired. Please use the 'Forgot Password' option to reset it.", HttpStatus.UNAUTHORIZED);
             }
         }
 
@@ -206,30 +173,26 @@ public class EmployeeServiceImpl implements EmployeeService {
                         .build()
         );
 
-        // Prepare response using LoginResponseDTO (MODIFIED)
-        LoginResponseDTO response = new LoginResponseDTO();
-        response.setId(employee.getEmployeeId());
-        response.setName(employee.getName());
-        response.setEmail(employee.getEmail());
-        response.setRole(employee.getRole());
-        response.setDepartment(employee.getDepartment());
-        response.setDesignation(employee.getDesignation());
-        response.setPasswordChangeRequired(employee.isTemporaryPassword());
-        response.setToken(token); // Added: Setting the JWT token
+        // Prepare response map
+        Map<String, Object> response = new HashMap<>();
+        response.put("message", "Login successful");
+        response.put("token", token);
+        response.put("employee", Map.of(
+                "id", employee.getEmployeeId(),
+                "name", employee.getName(),
+                "email", employee.getEmail(),
+                "role", employee.getRole(),
+                "department", employee.getDepartment(),
+                "designation", employee.getDesignation()
+        ));
 
-        // New notification call: On successful login (ADDED)
-        String notificationTitle = "Login Successful";
-        String notificationMessage = "You have successfully logged into the PIP Review System.";
-        notificationService.createNotification(employee, notificationTitle, notificationMessage, "INFO");
-
-        // Send login notification to ADMINs (ADDED)
-        List<Employee> admins = employeeRepository.findByRole(Role.ADMIN);
-        for (Employee admin : admins) {
-            String adminNotificationTitle = "User Logged In";
-            String adminNotificationMessage = employee.getName() + " (" + employee.getEmail() + ") has successfully logged in.";
-            notificationService.createNotification(admin, adminNotificationTitle, adminNotificationMessage, "INFO");
+        // Add flag to indicate if password change is needed for temporary passwords
+        if (employee.isTemporaryPassword()) {
+            response.put("passwordChangeRequired", true);
+            response.put("passwordExpiresAt", employee.getTemporaryPasswordGeneratedTime().plusHours(TEMPORARY_PASSWORD_VALID_DURATION_HOURS));
+        } else {
+            response.put("passwordChangeRequired", false);
         }
-
 
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
@@ -275,37 +238,20 @@ public class EmployeeServiceImpl implements EmployeeService {
         Optional<Employee> optional = employeeRepository.findById(id);
         if (optional.isPresent()) {
             Employee employee = optional.get();
+            employee.setName(updatedEmployee.getName());
+            employee.setDepartment(updatedEmployee.getDepartment());
+            employee.setDesignation(updatedEmployee.getDesignation());
+            employee.setSkills(updatedEmployee.getSkills());
+            employee.setKpi(updatedEmployee.getKpi());
+            employee.setStatus(updatedEmployee.getStatus());
+            employee.setManagerId(updatedEmployee.getManagerId());
 
-            // Flag to check if any significant changes were made (ADDED)
-            boolean changesMade = false;
-
-            // Update fields and check if changes were made (MODIFIED)
-            if (!Objects.equals(employee.getName(), updatedEmployee.getName())) { employee.setName(updatedEmployee.getName()); changesMade = true; }
-            if (!Objects.equals(employee.getDepartment(), updatedEmployee.getDepartment())) { employee.setDepartment(updatedEmployee.getDepartment()); changesMade = true; }
-            if (!Objects.equals(employee.getDesignation(), updatedEmployee.getDesignation())) { employee.setDesignation(updatedEmployee.getDesignation()); changesMade = true; }
-            if (updatedEmployee.getSkills() != null && !Objects.equals(employee.getSkills(), updatedEmployee.getSkills())) { employee.setSkills(updatedEmployee.getSkills()); changesMade = true; }
-            if (updatedEmployee.getKpi() != null && !Objects.equals(employee.getKpi(), updatedEmployee.getKpi())) { employee.setKpi(updatedEmployee.getKpi()); changesMade = true; }
-            if (!Objects.equals(employee.getStatus(), updatedEmployee.getStatus())) { employee.setStatus(updatedEmployee.getStatus()); changesMade = true; }
-
-            // Check for manager change
-            // Assuming Employee entity has `@ManyToOne Employee manager;` field
-            if (updatedEmployee.getManager() != null && (employee.getManager() == null || !Objects.equals(employee.getManager().getEmployeeId(), updatedEmployee.getManager().getEmployeeId()))) {
-                employee.setManager(updatedEmployee.getManager());
-                changesMade = true;
-            } else if (updatedEmployee.getManager() == null && employee.getManager() != null) { // Manager was set, now being unset
-                employee.setManager(null);
-                changesMade = true;
-            }
+            // IMPORTANT: Password update is removed from generic updateEmployee for security best practices.
+            // Password changes should be done via `resetPassword` (for logged-in users) or
+            // `verifyOtpAndResetPassword`/`resetPasswordWithToken` (for forgot password flows).
+            // If `updatedEmployee` contains a password, it will be ignored here.
 
             Employee updated = employeeRepository.save(employee);
-
-            // Notification for the updated employee if changes were made (ADDED)
-            if (changesMade) {
-                String notificationTitle = "Profile Updated";
-                String notificationMessage = "Your employee profile has been updated. Please review the changes.";
-                notificationService.createNotification(updated, notificationTitle, notificationMessage, "INFO");
-            }
-
             return new ResponseEntity<>(updated, HttpStatus.OK);
         } else {
             return new ResponseEntity<>("Employee not found with ID: " + id, HttpStatus.NOT_FOUND);
@@ -322,29 +268,25 @@ public class EmployeeServiceImpl implements EmployeeService {
     public ResponseEntity<?> deleteEmployee(UUID id) {
         Optional<Employee> optional = employeeRepository.findById(id);
         if (optional.isPresent()) {
-            Employee employeeToDelete = optional.get(); // Get employee details BEFORE deletion (ADDED)
-
-            // Notification for Admins about employee deletion (ADDED)
-            List<Employee> admins = employeeRepository.findByRole(Role.ADMIN);
-            for (Employee admin : admins) {
-                String adminNotificationTitle = "Employee Deleted";
-                String adminNotificationMessage = employeeToDelete.getName() + " (" + employeeToDelete.getEmail() + ") has been deleted from the system.";
-                notificationService.createNotification(admin, adminNotificationTitle, adminNotificationMessage, "ALERT");
-            }
-
-            // Note: Sending a WebSocket notification to the deleted employee
-            // won't work if they are logged in and their session is about to be terminated.
-            // For a deleted user, an email might be a more reliable notification method.
-            // If you still want to attempt, it would be here:
-            // String userNotificationTitle = "Account Deleted";
-            // String userNotificationMessage = "Your account has been deleted from the PIP Review System.";
-            // notificationService.createNotification(employeeToDelete, userNotificationTitle, userNotificationMessage, "ALERT");
-
-            employeeRepository.delete(employeeToDelete); // Perform deletion after getting details and sending notifications
+            employeeRepository.delete(optional.get());
             return new ResponseEntity<>("Employee deleted successfully", HttpStatus.OK);
         } else {
             return new ResponseEntity<>("Employee not found with ID: " + id, HttpStatus.NOT_FOUND);
         }
+    }
+
+    /**
+     * Deprecated method for direct password reset without OTP/token.
+     * Clients should use OTP-based or link-based password reset.
+     *
+     * @param email The employee's email.
+     * @param newPassword The new password.
+     * @return ResponseEntity indicating method not allowed.
+     */
+    @Override
+    public ResponseEntity<?> forgotPassword(String email, String newPassword) {
+        // This method is now deprecated in favor of the OTP-based reset
+        return new ResponseEntity<>("This method is deprecated. Please use the OTP-based password reset endpoints.", HttpStatus.METHOD_NOT_ALLOWED);
     }
 
     /**
@@ -356,30 +298,13 @@ public class EmployeeServiceImpl implements EmployeeService {
      */
     @Override
     public ResponseEntity<?> logout(String email) {
-        Optional<Employee> optional = employeeRepository.findByEmail(email); // Added: To fetch employee details for notifications
-        if (optional.isPresent()) {
-            Employee employee = optional.get();
-
-            // Notification for the employee who logged out (ADDED)
-            String notificationTitle = "Logout Successful";
-            String notificationMessage = "You have successfully logged out of the PIP Review System.";
-            notificationService.createNotification(employee, notificationTitle, notificationMessage, "INFO");
-
-            // Notification for Admins about logout (optional, depending on requirement) (ADDED)
-            List<Employee> admins = employeeRepository.findByRole(Role.ADMIN);
-            for (Employee admin : admins) {
-                String adminNotificationTitle = "User Logged Out";
-                String adminNotificationMessage = employee.getName() + " (" + employee.getEmail() + ") has logged out.";
-                notificationService.createNotification(admin, adminNotificationTitle, adminNotificationMessage, "INFO");
-            }
-        }
         return new ResponseEntity<>("Logged out successfully (client should discard token)", HttpStatus.OK);
     }
 
     /**
      * Initiates the password reset process by sending an OTP to the employee's email.
      *
-     * @param email The employee's email.
+     * @param email The email of the employee requesting OTP.
      * @return ResponseEntity with a success message or NOT_FOUND if email not found.
      */
     @Override
@@ -393,14 +318,7 @@ public class EmployeeServiceImpl implements EmployeeService {
         String otp = generateOtp();
         employee.setOtp(otp);
         employee.setOtpGeneratedTime(LocalDateTime.now());
-
-
         employeeRepository.save(employee);
-        // Notification: OTP sent (ADDED)
-        String notificationTitle = "Password Reset OTP Sent";
-        String notificationMessage = "An OTP has been sent to your email for password reset. It's valid for " + OTP_VALID_DURATION_MINUTES + " minutes.";
-        notificationService.createNotification(employee, notificationTitle, notificationMessage, "INFO");
-
 
         mailService.sendMail(email, "Password Reset OTP for PIP Review System",
                 "Dear " + employee.getName() + ",\n\n" +
@@ -454,11 +372,6 @@ public class EmployeeServiceImpl implements EmployeeService {
 
         employeeRepository.save(employee);
 
-        // Notification: Password reset successful (ADDED)
-        String notificationTitle = "Password Reset Successful";
-        String notificationMessage = "Your password has been successfully reset.";
-        notificationService.createNotification(employee, notificationTitle, notificationMessage, "INFO");
-
         mailService.sendMail(email, "Password Changed Successfully",
                 "Dear " + employee.getName() + ",\n\n" +
                         "Your password for PIP Review System has been successfully changed.\n\n" +
@@ -488,11 +401,6 @@ public class EmployeeServiceImpl implements EmployeeService {
         employee.setPasswordResetToken(resetToken);
         employee.setPasswordResetTokenExpiryTime(LocalDateTime.now().plusHours(1)); // Token valid for 1 hour
         employeeRepository.save(employee);
-
-        // Notification: Password reset link sent (ADDED)
-        String notificationTitle = "Password Reset Link Sent";
-        String notificationMessage = "A password reset link has been sent to your email. It's valid for 1 hour.";
-        notificationService.createNotification(employee, notificationTitle, notificationMessage, "INFO");
 
         String resetLink = baseUrl + "/reset-password?token=" + resetToken; // Adjust this URL based on your frontend route
 
@@ -538,11 +446,6 @@ public class EmployeeServiceImpl implements EmployeeService {
 
         employeeRepository.save(employee);
 
-        // Notification: Password reset successful via token (ADDED)
-        String notificationTitle = "Password Reset Successful";
-        String notificationMessage = "Your password has been successfully reset.";
-        notificationService.createNotification(employee, notificationTitle, notificationMessage, "INFO");
-
         mailService.sendMail(employee.getEmail(), "Password Changed Successfully",
                 "Dear " + employee.getName() + ",\n\n" +
                         "Your password for PIP Review System has been successfully changed.\n\n" +
@@ -572,7 +475,7 @@ public class EmployeeServiceImpl implements EmployeeService {
     public ResponseEntity<?> getEmployeesByRole(String role) {
         try {
             Role r = Role.valueOf(role.toUpperCase()); // Ensure role is uppercase for Enum.valueOf
-            return new ResponseEntity<>(employeeRepository.findByRole(r), HttpStatus.OK); // Changed from BAD_REQUEST to OK
+            return new ResponseEntity<>(employeeRepository.findByRole(r), HttpStatus.OK);
         } catch (IllegalArgumentException e) {
             return new ResponseEntity<>("Invalid role: " + role, HttpStatus.BAD_REQUEST);
         }
@@ -602,21 +505,8 @@ public class EmployeeServiceImpl implements EmployeeService {
         }
 
         Employee emp = empOpt.get();
-        emp.setManager(mgrOpt.get());
-        Employee updatedEmployee = employeeRepository.save(emp); // Save the employee first
-
-        // Notification to the employee who got a new manager (ADDED)
-        String empNotificationTitle = "New Manager Assigned";
-        String empNotificationMessage = "You have been assigned a new manager: " + updatedEmployee.getManager().getName() + ".";
-        notificationService.createNotification(updatedEmployee, empNotificationTitle, empNotificationMessage, "INFO");
-
-        // Notification to the newly assigned manager (ADDED)
-        String mgrNotificationTitle = "New Team Member Assigned";
-        String mgrNotificationMessage = "You have been assigned a new team member: " + updatedEmployee.getName() + ".";
-        notificationService.createNotification(updatedEmployee.getManager(), mgrNotificationTitle, mgrNotificationMessage, "INFO");
-
-
-        return new ResponseEntity<>(updatedEmployee, HttpStatus.OK);
+        emp.setManagerId(managerId);
+        return new ResponseEntity<>(employeeRepository.save(emp), HttpStatus.OK);
     }
 
     /**
@@ -632,7 +522,7 @@ public class EmployeeServiceImpl implements EmployeeService {
             return new ResponseEntity<>("Manager not found with ID: " + managerId, HttpStatus.NOT_FOUND);
         }
 
-        List<Employee> teamMembers = employeeRepository.findByManager_EmployeeId(managerId);
+        List<Employee> teamMembers = employeeRepository.findByManagerId(managerId);
         return new ResponseEntity<>(teamMembers, HttpStatus.OK);
     }
 
@@ -652,22 +542,9 @@ public class EmployeeServiceImpl implements EmployeeService {
 
         Employee emp = empOpt.get();
         emp.setStatus(status);
-        Employee updatedEmp = employeeRepository.save(emp); // Save the employee first
-
-        // Notification to the employee whose status was updated (ADDED)
-        String empNotificationTitle = "Your Status Updated";
-        String empNotificationMessage = "Your status has been updated to: " + updatedEmp.getStatus() + ".";
-        notificationService.createNotification(updatedEmp, empNotificationTitle, empNotificationMessage, "INFO");
-
-        // Notification to all ADMINs about the status change (ADDED)
-        List<Employee> admins = employeeRepository.findByRole(Role.ADMIN);
-        for (Employee admin : admins) {
-            String adminNotificationTitle = "Employee Status Changed";
-            String adminNotificationMessage = updatedEmp.getName() + "'s status has been changed to " + updatedEmp.getStatus() + ".";
-            notificationService.createNotification(admin, adminNotificationTitle, adminNotificationMessage, "INFO");
-        }
-        return new ResponseEntity<>(updatedEmp, HttpStatus.OK);
+        return new ResponseEntity<>(employeeRepository.save(emp), HttpStatus.OK);
     }
+
     /**
      * Marks an employee as being "UNDER_PIP" (Performance Improvement Plan).
      * Prevents adding an employee already under PIP.
@@ -689,16 +566,6 @@ public class EmployeeServiceImpl implements EmployeeService {
 
         emp.setStatus("UNDER_PIP");
         employeeRepository.save(emp);
-
-        String notificationTitle = "Performance Improvement Plan";
-        String notificationMessage = "You have been placed on a Performance Improvement Plan. Please check your details.";
-        notificationService.createNotification(emp, notificationTitle, notificationMessage, "ALERT");
-
-        if (emp.getManager() != null) {
-            String managerNotificationMessage = emp.getName() + " has been placed on a PIP. You have been notified.";
-            notificationService.createNotification(emp.getManager(), "PIP Alert", managerNotificationMessage, "ALERT");
-        }
-
         return new ResponseEntity<>("Employee added to PIP successfully", HttpStatus.OK);
     }
 
@@ -720,21 +587,20 @@ public class EmployeeServiceImpl implements EmployeeService {
 
         Employee employee = optional.get();
 
+        // Check old password
         if (!passwordEncoder.matches(oldPassword, employee.getPassword())) {
             return new ResponseEntity<>("Old password is incorrect", HttpStatus.UNAUTHORIZED);
         }
 
+        // Set and save new password
         employee.setPassword(passwordEncoder.encode(newPassword));
+        // Clear temporary password flags upon successful password change
         employee.setTemporaryPassword(false);
         employee.setTemporaryPasswordGeneratedTime(null);
 
         employeeRepository.save(employee);
 
-        // Notification: Password reset successful (ADDED)
-        String notificationTitle = "Password Reset Successful";
-        String notificationMessage = "Your password has been successfully reset.";
-        notificationService.createNotification(employee, notificationTitle, notificationMessage, "INFO");
-
+        // Send confirmation email
         String to = employee.getEmail();
         String subject = "Password Reset Successful";
         String message = "Hi " + employee.getName() + ",\n\nYour password has been successfully reset.\n\n" +
@@ -762,10 +628,5 @@ public class EmployeeServiceImpl implements EmployeeService {
         Map<String, String> res = new HashMap<>();
         res.put("pipStatus", empOpt.get().getStatus());
         return new ResponseEntity<>(res, HttpStatus.OK);
-    }
-
-    @Override
-    public List<Employee> getAssignedEmployees(String managerEmail) {
-        return employeeRepository.findByManager_Email(managerEmail);
     }
 }

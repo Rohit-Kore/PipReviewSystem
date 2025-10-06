@@ -180,7 +180,11 @@ public class FeedbackController {
         FeedbackResponseDto dto = new FeedbackResponseDto();
         dto.setFeedbackId(feedback.getFeedbackId());
         dto.setFromUser(feedback.getFromUser().getEmployeeId());
+        dto.setFromUserName(feedback.getFromUser().getName());
+
         dto.setToUser(feedback.getToUser().getEmployeeId());
+        dto.setToUserName(feedback.getToUser().getName());
+
         dto.setFeedbackType(feedback.getFeedbackType());
         dto.setComments(feedback.getComments());
         dto.setRating(feedback.getRating());

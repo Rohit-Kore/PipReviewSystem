@@ -40,22 +40,14 @@ public class SkillGapAnalysisService {
 
         SkillGapAnalysis savedGap = skillRepo.save(gap);
 
-        // Send browser notification to employee
+        // Send browser notification
         notificationService.createNotification(
                 employee,
                 "New Skill Gap Analysis",
-                "A new skill gap analysis has been assigned to you, " + employee.getName() + ": " + dto.getSkill(),
+                "A new skill gap analysis has been assigned: " + dto.getSkill(),
                 "INFO"
         );
-        // Send notification to manager if exists, with employee name
-        if (employee.getManager() != null) {
-            notificationService.createNotification(
-                employee.getManager(),
-                "New Skill Gap Analysis for Team Member",
-                "A new skill gap analysis has been assigned to your team member: " + employee.getName() + " for skill: " + dto.getSkill(),
-                "INFO"
-            );
-        }
+
         return savedGap;
     }
 
@@ -81,16 +73,8 @@ public class SkillGapAnalysisService {
                     "Your skill gap analysis for " + dto.getSkill() + " has been updated.",
                     "INFO"
             );
-            // Notify manager if exists, with employee name
-            if (employee.getManager() != null) {
-                notificationService.createNotification(
-                    employee.getManager(),
-                    "Skill Gap Analysis Updated for Team Member",
-                    "Skill gap analysis for your team member " + employee.getName() + " has been updated for skill: " + dto.getSkill(),
-                    "INFO"
-                );
-            }
         }
+
         return skillRepo.save(gap);
     }
 
@@ -120,14 +104,5 @@ public class SkillGapAnalysisService {
                 "Your skill gap analysis for " + gap.getSkill() + " has been deleted.",
                 "ALERT"
         );
-        // Notify manager if exists, with employee name
-        if (employee.getManager() != null) {
-            notificationService.createNotification(
-                employee.getManager(),
-                "Skill Gap Analysis Deleted for Team Member",
-                "Skill gap analysis for your team member " + employee.getName() + " has been deleted for skill: " + gap.getSkill(),
-                "ALERT"
-            );
-        }
     }
 }

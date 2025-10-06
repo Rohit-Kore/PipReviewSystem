@@ -69,6 +69,7 @@ public class NotificationService {
         Notification notification = notificationRepository.findById(notificationId)
                 .orElseThrow(() -> new RuntimeException("Notification not found with ID: " + notificationId));
 
+
         if (!notification.getIsRead()) { // avoid duplicate updates
             notification.setIsRead(true);
             notificationRepository.save(notification);
@@ -80,6 +81,10 @@ public class NotificationService {
                     notification
             );
         }
+
+        notification.setIsRead(true); // Set isRead to true
+        notificationRepository.save(notification); // Save the updated notification
+
     }
 
     /**
@@ -110,12 +115,14 @@ public class NotificationService {
         return notificationRepository.findByEmployeeEmail(email);
     }
 
+
     public List<Notification> getUnreadNotificationsByUserEmail(String email) {
         List<Notification> allNotifications = notificationRepository.findByEmployeeEmail(email);
         return allNotifications.stream()
                 .filter(notification -> !Boolean.TRUE.equals(notification.getIsRead()))
                 .toList();
     }
+
 
 
     public void sendNotificationToEmployee(String email, Notification notification) {

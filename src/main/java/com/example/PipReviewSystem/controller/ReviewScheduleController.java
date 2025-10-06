@@ -30,4 +30,3 @@ public class ReviewScheduleController {
         return ResponseEntity.ok(saved);
     }
 }
-
