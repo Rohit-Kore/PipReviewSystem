@@ -100,9 +100,13 @@
 
             // Subscribe to the user-specific notification topic
             // Messages are sent to this topic from the NotificationService in the backend
-            stompClient.subscribe(`/user/${userId}/queue/notifications`, function (notification) {
-                showNotification(JSON.parse(notification.body));
-            });
+          stompClient.subscribe(`/user/${userId}/queue/notifications`, function (notification) {
+    const notif = JSON.parse(notification.body);
+    if (!notif.isRead) { // show only unread
+        showNotification(notif);
+    }
+});
+
         }, function (error) {
             console.error('WebSocket Error: ' + error);
             document.getElementById('connection-status').innerHTML = 'Connection Status: <span class="disconnected">Disconnected</span>';

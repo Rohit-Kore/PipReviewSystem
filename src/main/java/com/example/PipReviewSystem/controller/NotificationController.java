@@ -58,6 +58,14 @@ public class NotificationController {
         List<Notification> notifications = notificationService.getNotificationsByUserEmail(email);
         return new ResponseEntity<>(notifications, HttpStatus.OK);
     }
+    // ✅ Get only unread notifications by email (Soft Read logic)
+    @GetMapping("/user/email/{email}/unread")
+    @PreAuthorize("hasAnyRole('ADMIN', 'HR', 'MANAGER', 'EMPLOYEE')")
+    public ResponseEntity<List<Notification>> getUnreadNotificationsByUserEmail(@PathVariable String email) {
+        List<Notification> notifications = notificationService.getUnreadNotificationsByUserEmail(email);
+        return new ResponseEntity<>(notifications, HttpStatus.OK);
+    }
+
 
 }
 

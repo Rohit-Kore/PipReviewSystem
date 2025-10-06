@@ -37,13 +37,6 @@ public class NotificationService {
 
         Notification savedNotification = notificationRepository.save(notification); // Save to database
 
-        // Send notification via WebSocket to the specific user's queue
-        // The destination '/queue/notifications' implies a user-specific queue.
-//        messagingTemplate.convertAndSendToUser(
-//                employee.getEmail(),   // ✅ yaha email (ya principal name) bhejna hai
-//                "/queue/notifications",
-//                savedNotification
-//        );
 
         messagingTemplate.convertAndSendToUser(
                 employee.getEmployeeId().toString(), // User ID as String
@@ -75,8 +68,23 @@ public class NotificationService {
     public void markNotificationAsRead(Long notificationId) {
         Notification notification = notificationRepository.findById(notificationId)
                 .orElseThrow(() -> new RuntimeException("Notification not found with ID: " + notificationId));
+
+
+        if (!notification.getIsRead()) { // avoid duplicate updates
+            notification.setIsRead(true);
+            notificationRepository.save(notification);
+
+            // optional: update real-time for UI
+            messagingTemplate.convertAndSendToUser(
+                    notification.getEmployee().getEmployeeId().toString(),
+                    "/queue/notifications/read",
+                    notification
+            );
+        }
+
         notification.setIsRead(true); // Set isRead to true
         notificationRepository.save(notification); // Save the updated notification
+
     }
 
     /**
@@ -106,6 +114,16 @@ public class NotificationService {
     public List<Notification> getNotificationsByUserEmail(String email) {
         return notificationRepository.findByEmployeeEmail(email);
     }
+
+
+    public List<Notification> getUnreadNotificationsByUserEmail(String email) {
+        List<Notification> allNotifications = notificationRepository.findByEmployeeEmail(email);
+        return allNotifications.stream()
+                .filter(notification -> !Boolean.TRUE.equals(notification.getIsRead()))
+                .toList();
+    }
+
+
 
     public void sendNotificationToEmployee(String email, Notification notification) {
 
