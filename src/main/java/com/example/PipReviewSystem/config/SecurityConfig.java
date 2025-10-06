@@ -80,7 +80,11 @@ public class SecurityConfig {
 
                         .requestMatchers("/api/employees/forgot-password", "/api/employees/logout").permitAll()
 
-                        // Employee
+                        //employee
+                                .requestMatchers("/api/employees/reset-password/request-otp").permitAll()
+                                .requestMatchers("/api/employees/reset-password/verify-otp-reset").permitAll()
+                                .requestMatchers( "/api/employees/reset-password/request-link").permitAll()
+                                .requestMatchers("/api/employees/reset-password/reset-with-token").permitAll()
 
                         .requestMatchers("/api/employees/my-team").hasAuthority("MANAGER")
 
@@ -99,7 +103,6 @@ public class SecurityConfig {
                         .requestMatchers("/api/employees/all").hasAnyAuthority("ADMIN", "HR")
 
                         .requestMatchers(HttpMethod.POST, "/api/employees/signup").hasAnyAuthority("ADMIN", "HR")
-
                         .requestMatchers("/api/employees/{id}").hasAnyAuthority("ADMIN", "HR")
 
                         .requestMatchers("/api/employees/update/{id}").hasAnyAuthority("ADMIN", "HR")
