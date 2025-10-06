@@ -56,23 +56,12 @@ public class EmployeeController {
     }
 
     // New endpoint to verify OTP and reset password
-    // New endpoint to verify OTP and reset password
     @PutMapping("/reset-password/verify-otp-reset")
     public ResponseEntity<?> verifyOtpAndResetPassword(@RequestBody VerifyOtpResetRequest request) {
         return employeeService.verifyOtpAndResetPassword(
                 request.getEmail(), request.getOtp(), request.getNewPassword()
         );
     }
-
-
-
-
-//    @PutMapping("/reset-password/verify-otp-reset")
-//    public ResponseEntity<?> verifyOtpAndResetPassword(@RequestParam String email,
-//                                                       @RequestParam String otp,
-//                                                       @RequestParam String newPassword) {
-//        return employeeService.verifyOtpAndResetPassword(email, otp, newPassword);
-//    }
 
     // --- NEW: Endpoint to request password reset link ---
     // This endpoint is public (no @PreAuthorize) as it's for forgotten passwords.
@@ -138,62 +127,47 @@ public class EmployeeController {
     }
 
 
-@PreAuthorize("hasAnyAuthority('ADMIN', 'HR')")
-@GetMapping("/status/{status}")
-public ResponseEntity<?> byStatus(@PathVariable String status) {
-    return employeeService.getEmployeesByStatus(status);
-}
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'HR')")
+    @GetMapping("/status/{status}")
+    public ResponseEntity<?> byStatus(@PathVariable String status) {
+        return employeeService.getEmployeesByStatus(status);
+    }
 
 
-@PreAuthorize("hasAnyAuthority('ADMIN', 'HR')")
-@GetMapping("/role/{role}")
-public ResponseEntity<?> byRole(@PathVariable String role) {
-    return employeeService.getEmployeesByRole(role);
-}
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'HR')")
+    @GetMapping("/role/{role}")
+    public ResponseEntity<?> byRole(@PathVariable String role) {
+        return employeeService.getEmployeesByRole(role);
+    }
 
-@PreAuthorize("hasAnyAuthority('ADMIN', 'HR', 'MANAGER')")
-@PutMapping("/assign-manager")
-public ResponseEntity<?> assignManager(@RequestParam UUID employeeId, @RequestParam UUID managerId) {
-    return employeeService.assignManager(employeeId, managerId);
-}
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'HR', 'MANAGER')")
+    @PutMapping("/assign-manager")
+    public ResponseEntity<?> assignManager(@RequestParam UUID employeeId, @RequestParam UUID managerId) {
+        return employeeService.assignManager(employeeId, managerId);
+    }
 
-@PreAuthorize("hasAnyAuthority('ADMIN', 'MANAGER')")
-@GetMapping("/team/{managerId}")
-public ResponseEntity<?> getTeam(@PathVariable UUID managerId) {
-    return employeeService.getTeamMembers(managerId);
-}
-
-@PutMapping("/update-status")
-public ResponseEntity<?> updateStatus(@RequestParam UUID id, @RequestParam String status) {
-    return employeeService.updateStatus(id, status);
-}
-
-@PreAuthorize("hasAnyAuthority('MANAGER','ADMIN')")
-@PutMapping("/add-to-pip/{employeeId}")
-public ResponseEntity<?> addToPip(@PathVariable UUID employeeId) {
-    return employeeService.addEmployeeToPip(employeeId);
-}
-
-@PreAuthorize("hasAnyAuthority('ADMIN', 'HR', 'MANAGER')")
-@GetMapping("/pip-status/{employeeId}")
-public ResponseEntity<?> pipStatus(@PathVariable UUID employeeId) {
-    return employeeService.getPipStatus(employeeId);
-}
-
-
-/*
-// --- NEW: Endpoint for a logged-in manager to get their team ---
-    @Operation(
-            summary = "Get My Team",
-            description = "Allows a logged-in MANAGER to retrieve their assigned team members. Uses the manager's ID from the security context."
-    )
-    @PreAuthorize("hasAuthority('MANAGER')")
-    @GetMapping("/my-team")
-    public ResponseEntity<?> getMyTeam(Authentication authentication) {
-        UUID managerId = UUID.fromString(authentication.getName()); // Assuming the principal name is the UUID
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'MANAGER')")
+    @GetMapping("/team/{managerId}")
+    public ResponseEntity<?> getTeam(@PathVariable UUID managerId) {
         return employeeService.getTeamMembers(managerId);
     }
-*/
+
+    @PutMapping("/update-status")
+    public ResponseEntity<?> updateStatus(@RequestParam UUID id, @RequestParam String status) {
+        return employeeService.updateStatus(id, status);
+    }
+
+    @PreAuthorize("hasAnyAuthority('MANAGER','ADMIN')")
+    @PutMapping("/add-to-pip/{employeeId}")
+    public ResponseEntity<?> addToPip(@PathVariable UUID employeeId) {
+        return employeeService.addEmployeeToPip(employeeId);
+    }
+
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'HR', 'MANAGER')")
+    @GetMapping("/pip-status/{employeeId}")
+    public ResponseEntity<?> pipStatus(@PathVariable UUID employeeId) {
+        return employeeService.getPipStatus(employeeId);
+    }
 
     // --- NEW: Endpoint for a logged-in manager to get their team by email ---
     @Operation(
@@ -212,10 +186,4 @@ public ResponseEntity<?> pipStatus(@PathVariable UUID employeeId) {
 
         return ResponseEntity.ok(assignedEmployees);
     }
-
-
-
-
 }
-
-
