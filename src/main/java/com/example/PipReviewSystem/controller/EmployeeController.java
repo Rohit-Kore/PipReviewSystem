@@ -1,16 +1,17 @@
 package com.example.PipReviewSystem.controller;
 
+import com.example.PipReviewSystem.dto.VerifyOtpResetRequest;
 import com.example.PipReviewSystem.entity.Employee;
 import com.example.PipReviewSystem.service.EmployeeService;
-import lombok.AllArgsConstructor;
+import io.swagger.v3.oas.annotations.Operation;
 import org.springframework.security.core.Authentication;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import java.util.UUID;
-import lombok.RequiredArgsConstructor;
 
+import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/employees")
@@ -18,18 +19,74 @@ public class EmployeeController {
 
     @Autowired
     private EmployeeService employeeService;
-/*  old
+
+    // --- DTOs for Request Bodies  ---
+
+    // For /forgot-password/request-link
+    public static class RequestResetLink {
+        public String email;
+        public String baseUrl;
+    }
+
+    // For /forgot-password/reset-with-token
+    public static class ResetPasswordWithTokenRequest {
+        public String token;
+        public String newPassword;
+    }
+
+    // --- Endpoints ---
+
+    @Operation(
+            summary = "Step 1️⃣ - Register New Employee",
+            description = "Allows ADMIN or HR to create a new employee account. A system-generated temporary password is emailed to the new employee."
+    )
     @PreAuthorize("hasAnyAuthority('ADMIN', 'HR')")
     @PostMapping("/signup")
-    public ResponseEntity<?> register(@RequestBody Employee employee) {
-        return employeeService.registerEmployee(employee);
-    }*/
-@PreAuthorize("hasAnyAuthority('ADMIN', 'HR')")
-@PostMapping("/signup")
     public ResponseEntity<?> register(@RequestBody Employee employee,
                                       Authentication authentication) {
         String creatorRole = authentication.getAuthorities().iterator().next().getAuthority();
         return employeeService.registerEmployee(employee, creatorRole);
+    }
+
+
+    // New endpoint to request OTP for password reset
+    @PostMapping("/reset-password/request-otp")
+    public ResponseEntity<?> requestOtpForForgotPassword(@RequestParam String email) {
+        return employeeService.requestPasswordResetOtp(email);
+    }
+
+    // New endpoint to verify OTP and reset password
+    // New endpoint to verify OTP and reset password
+    @PutMapping("/reset-password/verify-otp-reset")
+    public ResponseEntity<?> verifyOtpAndResetPassword(@RequestBody VerifyOtpResetRequest request) {
+        return employeeService.verifyOtpAndResetPassword(
+                request.getEmail(), request.getOtp(), request.getNewPassword()
+        );
+    }
+
+
+
+
+//    @PutMapping("/reset-password/verify-otp-reset")
+//    public ResponseEntity<?> verifyOtpAndResetPassword(@RequestParam String email,
+//                                                       @RequestParam String otp,
+//                                                       @RequestParam String newPassword) {
+//        return employeeService.verifyOtpAndResetPassword(email, otp, newPassword);
+//    }
+
+    // --- NEW: Endpoint to request password reset link ---
+    // This endpoint is public (no @PreAuthorize) as it's for forgotten passwords.
+    @PostMapping("/reset-password/request-link")
+    public ResponseEntity<?> requestPasswordResetLink(@RequestBody RequestResetLink request) {
+        // The baseUrl is critical for the frontend to construct the clickable link.
+        return employeeService.requestPasswordResetLink(request.email, request.baseUrl);
+    }
+
+    // --- NEW: Endpoint to reset password using the token from the link ---
+    // This endpoint is public (no @PreAuthorize) as it's for forgotten passwords.
+    @PutMapping("/reset-password/reset-with-token")
+    public ResponseEntity<?> resetPasswordWithToken(@RequestBody ResetPasswordWithTokenRequest request) {
+        return employeeService.resetPasswordWithToken(request.token, request.newPassword);
     }
 
 
@@ -44,8 +101,8 @@ public class EmployeeController {
 
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestParam String email, @RequestParam String password) {
-        return employeeService.login(email, password);
+    public ResponseEntity<Employee> login(@RequestParam String email, @RequestParam String password) {
+        return (ResponseEntity<Employee>) employeeService.login(email, password);
     }
 
     @PreAuthorize("hasAuthority('ADMIN')")
@@ -75,126 +132,90 @@ public class EmployeeController {
     }
 
 
-
-
     @PostMapping("/logout")
     public ResponseEntity<?> logout(@RequestParam String email) {
         return employeeService.logout(email);
     }
 
 
-    @PutMapping("/forgot-password")
-    public ResponseEntity<?> forgotPassword(@RequestParam String email, @RequestParam String newPassword) {
-        return employeeService.forgotPassword(email, newPassword);
-    }
+@PreAuthorize("hasAnyAuthority('ADMIN', 'HR')")
+@GetMapping("/status/{status}")
+public ResponseEntity<?> byStatus(@PathVariable String status) {
+    return employeeService.getEmployeesByStatus(status);
+}
 
 
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'HR')")
-    @GetMapping("/status/{status}")
-    public ResponseEntity<?> byStatus(@PathVariable String status) {
-        return employeeService.getEmployeesByStatus(status);
-    }
+@PreAuthorize("hasAnyAuthority('ADMIN', 'HR')")
+@GetMapping("/role/{role}")
+public ResponseEntity<?> byRole(@PathVariable String role) {
+    return employeeService.getEmployeesByRole(role);
+}
+
+@PreAuthorize("hasAnyAuthority('ADMIN', 'HR', 'MANAGER')")
+@PutMapping("/assign-manager")
+public ResponseEntity<?> assignManager(@RequestParam UUID employeeId, @RequestParam UUID managerId) {
+    return employeeService.assignManager(employeeId, managerId);
+}
+
+@PreAuthorize("hasAnyAuthority('ADMIN', 'MANAGER')")
+@GetMapping("/team/{managerId}")
+public ResponseEntity<?> getTeam(@PathVariable UUID managerId) {
+    return employeeService.getTeamMembers(managerId);
+}
+
+@PutMapping("/update-status")
+public ResponseEntity<?> updateStatus(@RequestParam UUID id, @RequestParam String status) {
+    return employeeService.updateStatus(id, status);
+}
+
+@PreAuthorize("hasAnyAuthority('MANAGER','ADMIN')")
+@PutMapping("/add-to-pip/{employeeId}")
+public ResponseEntity<?> addToPip(@PathVariable UUID employeeId) {
+    return employeeService.addEmployeeToPip(employeeId);
+}
+
+@PreAuthorize("hasAnyAuthority('ADMIN', 'HR', 'MANAGER')")
+@GetMapping("/pip-status/{employeeId}")
+public ResponseEntity<?> pipStatus(@PathVariable UUID employeeId) {
+    return employeeService.getPipStatus(employeeId);
+}
 
 
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'HR')")
-    @GetMapping("/role/{role}")
-    public ResponseEntity<?> byRole(@PathVariable String role) {
-        return employeeService.getEmployeesByRole(role);
-    }
-
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'HR', 'MANAGER')")
-    @PutMapping("/assign-manager")
-    public ResponseEntity<?> assignManager(@RequestParam UUID employeeId, @RequestParam UUID managerId) {
-        return employeeService.assignManager(employeeId, managerId);
-    }
-
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'MANAGER')")
-    @GetMapping("/team/{managerId}")
-    public ResponseEntity<?> getTeam(@PathVariable UUID managerId) {
+/*
+// --- NEW: Endpoint for a logged-in manager to get their team ---
+    @Operation(
+            summary = "Get My Team",
+            description = "Allows a logged-in MANAGER to retrieve their assigned team members. Uses the manager's ID from the security context."
+    )
+    @PreAuthorize("hasAuthority('MANAGER')")
+    @GetMapping("/my-team")
+    public ResponseEntity<?> getMyTeam(Authentication authentication) {
+        UUID managerId = UUID.fromString(authentication.getName()); // Assuming the principal name is the UUID
         return employeeService.getTeamMembers(managerId);
     }
+*/
 
-    @PutMapping("/update-status")
-    public ResponseEntity<?> updateStatus(@RequestParam UUID id, @RequestParam String status) {
-        return employeeService.updateStatus(id, status);
+    // --- NEW: Endpoint for a logged-in manager to get their team by email ---
+    @Operation(
+            summary = "Get My Team by Email",
+            description = "Allows a logged-in MANAGER to retrieve their assigned team members using their email from the security context."
+    )
+    @PreAuthorize("hasAuthority('MANAGER')")
+    @GetMapping("/assigned")
+    public ResponseEntity<List<Employee>> getMyTeamByEmail(Authentication authentication) {
+        String managerEmail = authentication.getName(); // Assuming the principal name is the email
+        List<Employee> assignedEmployees = employeeService.getAssignedEmployees(managerEmail);
+        // Set the manager field to null for each employee to prevent nested data
+        for (Employee employee : assignedEmployees) {
+            employee.setManager(null);
+        }
+
+        return ResponseEntity.ok(assignedEmployees);
     }
 
-    @PreAuthorize("hasAnyAuthority('MANAGER','ADMIN')")
-    @PutMapping("/add-to-pip/{employeeId}")
-    public ResponseEntity<?> addToPip(@PathVariable UUID employeeId) {
-        return employeeService.addEmployeeToPip(employeeId);
-    }
 
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'HR', 'MANAGER')")
-    @GetMapping("/pip-status/{employeeId}")
-    public ResponseEntity<?> pipStatus(@PathVariable UUID employeeId) {
-        return employeeService.getPipStatus(employeeId);
-    }
 
 
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-//@RestController
-//@RequestMapping("/api/employees")
-//public class EmployeeController {
-//
-//    @Autowired
-//    private EmployeeService employeeService;
-//
-//    public EmployeeController(EmployeeService employeeService) {
-//        this.employeeService = employeeService;
-//    }
-//
-//    @PostMapping
-//    public ResponseEntity<Employee> createEmployee(@RequestBody Employee employee) {
-//        return ResponseEntity.ok(employeeService.createEmployee(employee));
-//    }
-//
-//    @GetMapping("/{id}")
-//    public ResponseEntity<Employee> getEmployeeById(@PathVariable UUID id) {
-//        return ResponseEntity.ok(employeeService.getEmployeeById(id));
-//    }
-//
-//    @GetMapping
-//    public ResponseEntity<List<Employee>> getAllEmployees() {
-//        return ResponseEntity.ok(employeeService.getAllEmployees());
-//    }
-//
-//    @GetMapping("/role/{role}")
-//    public ResponseEntity<List<Employee>> getEmployeesByRole(@PathVariable Role role) {
-//        return ResponseEntity.ok(employeeService.getEmployeesByRole(role));
-//    }
-//
-//    @PutMapping("/{id}")
-//    public ResponseEntity<Employee> updateEmployee(@PathVariable UUID id, @RequestBody Employee employee) {
-//        return ResponseEntity.ok(employeeService.updateEmployee(id, employee));
-//    }
-//
-//    @DeleteMapping("/{id}")
-//    public ResponseEntity<Void> deleteEmployee(@PathVariable UUID id) {
-//        employeeService.deleteEmployee(id);
-//        return ResponseEntity.noContent().build();
-//    }
-//}

@@ -39,12 +39,21 @@ public class FeedbackController {
             @ApiResponse(responseCode = "400", description = "Invalid input or user not found"),
             @ApiResponse(responseCode = "401", description = "Unauthorized")
     })
+    
+
+
     @PreAuthorize("hasAnyAuthority('EMPLOYEE', 'MANAGER')")
     @PostMapping("/add")
-    public ResponseEntity<Feedback> createFeedback(@RequestBody FeedbackRequestDTO dto, Principal principal) {
-        return ResponseEntity.ok(feedbackService.createFeedbackFromDTO(dto, principal.getName()));
-    }
+    public ResponseEntity<FeedbackResponseDto> createFeedback(@RequestBody FeedbackRequestDTO dto, Principal principal) {
+        // 1. Create the feedback entity
+        Feedback newFeedback = feedbackService.createFeedbackFromDTO(dto, principal.getName());
 
+        // 2. Map the entity to a safe DTO for the response
+        FeedbackResponseDto responseDto = mapToDto(newFeedback);
+
+        // 3. Return the DTO
+        return ResponseEntity.ok(responseDto);
+    }
     @Operation(
             summary = "Step 2️⃣ - Get All Feedbacks",
             description = "HR and MANAGER can view all feedbacks."

@@ -12,12 +12,14 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/pip")
+@CrossOrigin("*")
 public class PIPController {
 
     @Autowired
     private PIPService pipService;
 
     @PreAuthorize("hasAnyAuthority('MANAGER', 'HR','ADMIN')")
+
     @PostMapping("/start")
     public ResponseEntity<?> startPip(@RequestBody PIP pip) {
         return pipService.startPip(pip);

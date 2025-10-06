@@ -1,46 +1,62 @@
 package com.example.PipReviewSystem.entity;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.*;
+
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.NoArgsConstructor;
+
 import lombok.*;
 
 import java.time.LocalDateTime;
 
 @Entity
-//@Getter
-//@Setter
+
 @NoArgsConstructor
+
 @AllArgsConstructor
+
+//@Getter
+//
+//@Setter
+
 public class PIP {
 
     @Id
+
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+
     private Long pipId;
 
-    // Employee for whom PIP is created
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.EAGER)
+
     @JoinColumn(name = "employee_id", nullable = false)
-    @JsonBackReference(value = "employee-pip")
+
+    @JsonIdentityReference(alwaysAsId = false)
+
     private Employee employee;
 
-    // Reviewer or Manager creating the PIP
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.EAGER)
+
     @JoinColumn(name = "reviewer_id", nullable = false)
-    @JsonBackReference(value = "reviewer-pip")
+
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "manager", "pips", "performanceReviews"})
+
     private Employee reviewer;
 
+
+
     private LocalDateTime startDate;
+
     private LocalDateTime endDate;
 
     private String goals;
+
     private String progress;
 
-    private String status; // e.g., ACTIVE, COMPLETED, FAILED
-    private String outcome;
-    private String comments;
+    private String status;
 
+    private String outcome;
+
+    private String comments;
 
     public Long getPipId() {
         return pipId;
@@ -121,55 +137,7 @@ public class PIP {
     public void setComments(String comments) {
         this.comments = comments;
     }
+    public void setLastProgressReviewDate(LocalDateTime now) {
+    }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-//old one
-//public class PIP {
-//
-//    @Id
-//    @GeneratedValue(strategy = GenerationType.IDENTITY)
-//    private Long pipId;
-//
-//    @ManyToOne
-//    @JoinColumn(name = "employee_id")
-//    private Employee employee;
-//
-//    private LocalDateTime startDate;
-//    private LocalDateTime endDate;
-//    private String goals;
-//    private String progress;
-//    private String status; // ACTIVE, COMPLETED, FAILED
-//
-//    @ManyToOne
-//    @JoinColumn(name = "reviewer_id")
-//    private Employee reviewer;
-//
-//    private String outcome;
-//    private String comments;
-//}
-
-
 
