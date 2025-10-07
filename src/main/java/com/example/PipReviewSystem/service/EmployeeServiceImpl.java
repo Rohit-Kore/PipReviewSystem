@@ -93,8 +93,7 @@ public class EmployeeServiceImpl implements EmployeeService {
      * @param employee The employee object containing details.
      * @param creatorRole The role of the user creating this employee (e.g., "ADMIN", "HR").
      * @return ResponseEntity with the saved Employee object or an error message.
-     */
-    @Override
+     */@Override
     public ResponseEntity<?> registerEmployee(Employee employee, String creatorRole) {
         Optional<Employee> existing = employeeRepository.findByEmail(employee.getEmail());
         if (existing.isPresent()) {
@@ -107,14 +106,24 @@ public class EmployeeServiceImpl implements EmployeeService {
 
         String temporaryPassword = generateRandomPassword();
         employee.setPassword(passwordEncoder.encode(temporaryPassword));
-        employee.setStatus("ACTIVE");
+
+        // ✅ Set status dynamically (ACTIVE or INACTIVE)
+        if (employee.getStatus() == null || employee.getStatus().isBlank()) {
+            // If no status provided → default ACTIVE
+            employee.setStatus("ACTIVE");
+        } else {
+            // If user provides a value → clean and use it
+            employee.setStatus(employee.getStatus().trim().toUpperCase());
+        }
+
         employee.setTemporaryPassword(true); // Mark as temporary password
         employee.setTemporaryPasswordGeneratedTime(LocalDateTime.now()); // Set generation time
 
         Employee saved = employeeRepository.save(employee);
 
         // Calculate expiry time for the email message
-        LocalDateTime expiryTime = saved.getTemporaryPasswordGeneratedTime().plusHours(TEMPORARY_PASSWORD_VALID_DURATION_HOURS);
+        LocalDateTime expiryTime = saved.getTemporaryPasswordGeneratedTime()
+                .plusHours(TEMPORARY_PASSWORD_VALID_DURATION_HOURS);
 
         // Send welcome email with credentials and expiry
         mailService.sendMail(saved.getEmail(), "Welcome to PIP Review System - Your Account Details",
@@ -137,8 +146,7 @@ public class EmployeeServiceImpl implements EmployeeService {
      * @param email The employee's email.
      * @param password The employee's password.
      * @return ResponseEntity with login success message, JWT token, employee details, and password change requirement.
-     */
-    @Override
+     */@Override
     public ResponseEntity<?> login(String email, String password) {
         Optional<Employee> optional = employeeRepository.findByEmail(email);
         if (optional.isEmpty()) {
@@ -146,6 +154,11 @@ public class EmployeeServiceImpl implements EmployeeService {
         }
 
         Employee employee = optional.get();
+
+        // 🧩 New Check: Employee must be ACTIVE
+        if (!"ACTIVE".equalsIgnoreCase(employee.getStatus())) {
+            return new ResponseEntity<>("Your account is inactive. Please contact the admin.", HttpStatus.FORBIDDEN);
+        }
 
         if (!passwordEncoder.matches(password, employee.getPassword())) {
             return new ResponseEntity<>("Invalid email or password", HttpStatus.UNAUTHORIZED);
@@ -156,8 +169,8 @@ public class EmployeeServiceImpl implements EmployeeService {
             LocalDateTime expiryDateTime = employee.getTemporaryPasswordGeneratedTime().plusHours(TEMPORARY_PASSWORD_VALID_DURATION_HOURS);
             if (LocalDateTime.now().isAfter(expiryDateTime)) {
                 // Temporary password has expired
-                employee.setStatus("INACTIVE"); // Or a specific status like "TEMP_PASSWORD_EXPIRED"
-                employee.setTemporaryPassword(false); // Clear temporary flag
+                employee.setStatus("INACTIVE");
+                employee.setTemporaryPassword(false);
                 employee.setTemporaryPasswordGeneratedTime(null);
                 employeeRepository.save(employee);
                 return new ResponseEntity<>("Your temporary password has expired. Please use the 'Forgot Password' option to reset it.", HttpStatus.UNAUTHORIZED);
@@ -173,7 +186,6 @@ public class EmployeeServiceImpl implements EmployeeService {
                         .build()
         );
 
-        // Prepare response map
         Map<String, Object> response = new HashMap<>();
         response.put("message", "Login successful");
         response.put("token", token);
@@ -186,7 +198,6 @@ public class EmployeeServiceImpl implements EmployeeService {
                 "designation", employee.getDesignation()
         ));
 
-        // Add flag to indicate if password change is needed for temporary passwords
         if (employee.isTemporaryPassword()) {
             response.put("passwordChangeRequired", true);
             response.put("passwordExpiresAt", employee.getTemporaryPasswordGeneratedTime().plusHours(TEMPORARY_PASSWORD_VALID_DURATION_HOURS));
@@ -452,6 +463,11 @@ public class EmployeeServiceImpl implements EmployeeService {
                         "If you did not make this change, please contact support immediately.\n\n" +
                         "Regards,\nPIP Review System Team");
         return new ResponseEntity<>("Password reset successfully.", HttpStatus.OK);
+    }
+
+    @Override
+    public List<Employee> getAssignedEmployees(String managerEmail) {
+        return List.of();
     }
 
     /**

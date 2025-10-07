@@ -29,4 +29,6 @@ public interface EmployeeRepository extends JpaRepository<Employee, UUID> {
     List<Employee> findByJoiningDateBetween(LocalDateTime start, LocalDateTime end);
 
     Optional<Employee> findByPasswordResetToken(String token);
+
+    List<Employee> findByManagerId(UUID managerId);
 }
