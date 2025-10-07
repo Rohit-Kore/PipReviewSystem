@@ -5,10 +5,11 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.UUID;
+
 
 @Repository
-public interface AuditLogRepository extends JpaRepository<AuditLog, Long> {
-    List<AuditLog> findByUserEmployeeId(Long userId);
-    List<AuditLog> findByEntity(String entity);
-    List<AuditLog> findByAction(String action);
-}
+    public interface AuditLogRepository extends JpaRepository<AuditLog, UUID> {
+        List<AuditLog> findByUser_EmployeeId(UUID userId); // ✅ This is correct
+    }
+
